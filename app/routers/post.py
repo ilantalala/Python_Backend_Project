@@ -4,19 +4,35 @@ import time
 from .. import models,schemas,oauth2
 from sqlalchemy.orm import Session
 from .. database import get_db
+from sqlalchemy import func
 
 router=APIRouter(
     prefix="/posts",
     tags=['Posts']
 )
 
-@router.get('/',response_model=List[schemas.Post])
+@router.get('/', response_model=List[schemas.PostOut])
 def get_posts(db:Session=Depends(get_db),current_user:int=Depends(oauth2.get_current_user)
               ,limit:int=10,skip:int=0,search:Optional[str]=""):
 
     posts=db.query(models.Post).filter(models.Post.content.contains(search)).limit(limit).offset(skip).all()
-
-    return posts
+    results=db.query(models.Post,func.count(models.Vote.post_id)).join(models.Vote,
+                                                                       models.Vote.post_id==models.Post.id,isouter=True).group_by(models.Post.id).all()
+ 
+    print(f'results: {results}')
+    rows = (
+        db.query(
+            models.Post,
+            func.count(models.Vote.post_id).label("votes"),
+        )
+        .outerjoin(models.Vote, models.Vote.post_id == models.Post.id)
+        .filter(models.Post.content.contains(search))
+        .group_by(models.Post.id)
+        .limit(limit)
+        .offset(skip)
+        .all()
+    )
+    return [schemas.PostOut(Post=post, votes=votes) for post, votes in rows]
 @router.post("/",status_code=status.HTTP_201_CREATED,response_model=schemas.Post)
 def create_posts(post:schemas.PostCreate,db:Session=Depends(get_db),current_user:int=Depends(oauth2.get_current_user)):
     print(f'id:{current_user.id}')
