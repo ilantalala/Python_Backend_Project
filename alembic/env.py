@@ -10,7 +10,7 @@ from app.config import settings
 config = context.config
 config.set_main_option(
     'sqlalchemy.url',
-    f'postgresql+psycopg2://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}')
+    'postgresql://fastapi_database_8lk5_user:YURVuJwhn2RPlg6zcje1bjBlrSU2pjtq@dpg-d44vanngi27c73ajqjt0-a/fastapi_database_8lk5')
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
